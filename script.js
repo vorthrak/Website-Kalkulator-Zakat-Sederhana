@@ -1,135 +1,89 @@
 function formatRupiah(angka) {
     if (isNaN(angka)) return 'Rp 0';
-    const format = new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    });
-    return format.format(angka);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 }
 
 function parseRupiah(rupiah) {
     return parseInt(rupiah.replace(/[^0-9]+/g, ""), 10);
 }
 
+function switchTab(id) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+    document.getElementById('result').innerText = '';
+    resetButtons();
+}
+
 function updateNisab(type) {
-    const hargaEmas = parseRupiah(document.getElementById(`hargaemas-${type}`).value);
-
-    if (!isNaN(hargaEmas)) {
-        const nisabTahun = hargaEmas * 85;
-        const nisabBulan = Math.floor(nisabTahun / 12);
-
-        document.getElementById(`nisab-tahun-${type}`).value = formatRupiah(nisabTahun);
-        document.getElementById(`nisab-bulan-${type}`).value = formatRupiah(nisabBulan);
-    }
+    const hargaEmas = parseRupiah(document.getElementById(`hargaemas-${type}`).value || "0");
+    const nisabTahun = hargaEmas * 85;
+    const nisabBulan = Math.floor(nisabTahun / 12);
+    document.getElementById(`nisab-tahun-${type}`).value = formatRupiah(nisabTahun);
+    document.getElementById(`nisab-bulan-${type}`).value = formatRupiah(nisabBulan);
 }
 
 function updatePenghasilanBersihProfesi() {
-    const penghasilan = parseRupiah(document.getElementById('penghasilan-profesi').value);
-    const kebutuhan = parseRupiah(document.getElementById('kebutuhan-profesi').value);
-    
-    if (!isNaN(penghasilan) && !isNaN(kebutuhan)) {
-        const penghasilanBersih = penghasilan - kebutuhan;
-        document.getElementById('penghasilan-bersih-profesi').value = formatRupiah(penghasilanBersih);
-    }
+    const penghasilan = parseRupiah(document.getElementById('penghasilan-profesi').value || "0");
+    const kebutuhan = parseRupiah(document.getElementById('kebutuhan-profesi').value || "0");
+    document.getElementById('penghasilan-bersih-profesi').value = formatRupiah(penghasilan - kebutuhan);
 }
 
 function updateHartaSimpananMaal() {
-    const a = parseRupiah(document.getElementById('a').value);
-    const b = parseRupiah(document.getElementById('b').value);
-    const c = parseRupiah(document.getElementById('c').value);
-    const d = parseRupiah(document.getElementById('d').value);
-    const e = parseRupiah(document.getElementById('e').value);
-    const g = parseRupiah(document.getElementById('g').value);
-
-    if (!isNaN(a) && !isNaN(b) && !isNaN(c) && !isNaN(d) && !isNaN(e)) {
-        const f = a + b + c + d + e;
-        document.getElementById('f').value = formatRupiah(f);
-
-        const h = f - g;
-        document.getElementById('h').value = formatRupiah(h);
-    }
+    const a = parseRupiah(document.getElementById('a').value || "0");
+    const b = parseRupiah(document.getElementById('b').value || "0");
+    const c = parseRupiah(document.getElementById('c').value || "0");
+    const d = parseRupiah(document.getElementById('d').value || "0");
+    const e = parseRupiah(document.getElementById('e').value || "0");
+    const g = parseRupiah(document.getElementById('g').value || "0");
+    const f = a + b + c + d + e;
+    document.getElementById('f').value = formatRupiah(f);
+    document.getElementById('h').value = formatRupiah(f - g);
 }
 
 function hitungZakat(type) {
-    let resultText;
-    let zakat;
     const resultDiv = document.getElementById('result');
     resultDiv.innerHTML = '';
+    resetButtons();
 
     if (type === 'profesi') {
-        const penghasilanBersih = parseRupiah(document.getElementById('penghasilan-bersih-profesi').value);
-        const nisabBulan = parseRupiah(document.getElementById('nisab-bulan-profesi').value);
+        const penghasilanBersih = parseRupiah(document.getElementById('penghasilan-bersih-profesi').value || "0");
+        const nisabBulan = parseRupiah(document.getElementById('nisab-bulan-profesi').value || "0");
 
-        if (isNaN(penghasilanBersih) || isNaN(nisabBulan)) {
-            resultDiv.innerText = 'Mohon periksa input Anda.';
-            return;
-        }
-
-        if (penghasilanBersih < nisabBulan) {
-            resultText = 'Penghasilan Anda belum mencapai nisab. Anda tetap bisa menyempurnakan niat baik dengan bersedekah.';
-            document.getElementById('buttons-below-nisab').style.display = 'flex';
-            document.getElementById('buttons-above-nisab').style.display = 'none';
+        if (penghasilanBersih >= nisabBulan) {
+            const zakat = penghasilanBersih * 0.025;
+            resultDiv.innerHTML = `✅ Anda Wajib Zakat. Besaran zakat: <strong>${formatRupiah(zakat)}</strong>`;
+            document.getElementById('buttons-above-nisab').style.display = 'block';
         } else {
-            zakat = penghasilanBersih * 0.025;
-            resultText = `Jumlah Zakat yang harus dibayar: ${formatRupiah(zakat)}`;
-            document.getElementById('buttons-below-nisab').style.display = 'none';
-            document.getElementById('buttons-above-nisab').style.display = 'flex';
-        }
-    } else if (type === 'maal') {
-        const hartaKenaZakat = parseRupiah(document.getElementById('h').value);
-        const nisabTahun = parseRupiah(document.getElementById('nisab-tahun-maal').value);
-
-        if (isNaN(hartaKenaZakat) || isNaN(nisabTahun)) {
-            resultDiv.innerText = 'Mohon periksa input Anda.';
-            return;
-        }
-
-        if (hartaKenaZakat < nisabTahun) {
-            resultText = 'Harta Anda belum mencapai nisab. Anda tetap bisa menyempurnakan niat baik dengan bersedekah.';
-            document.getElementById('buttons-below-nisab-maal').style.display = 'flex';
-            document.getElementById('buttons-above-nisab-maal').style.display = 'none';
-        } else {
-            zakat = hartaKenaZakat * 0.025;
-            resultText = `Jumlah Zakat yang harus dibayar: ${formatRupiah(zakat)}`;
-            document.getElementById('buttons-below-nisab-maal').style.display = 'none';
-            document.getElementById('buttons-above-nisab-maal').style.display = 'flex';
+            resultDiv.innerHTML = `❌ Anda belum wajib zakat. Silakan bersedekah jika mampu.`;
+            document.getElementById('buttons-below-nisab').style.display = 'block';
         }
     }
 
-    resultDiv.innerHTML = resultText;
+    if (type === 'maal') {
+        const h = parseRupiah(document.getElementById('h').value || "0");
+        const nisabTahun = parseRupiah(document.getElementById('nisab-tahun-maal').value || "0");
+
+        if (h >= nisabTahun) {
+            const zakat = h * 0.025;
+            resultDiv.innerHTML = `✅ Anda Wajib Zakat. Besaran zakat: <strong>${formatRupiah(zakat)}</strong>`;
+            document.getElementById('buttons-above-nisab-maal').style.display = 'block';
+        } else {
+            resultDiv.innerHTML = `❌ Anda belum wajib zakat. Silakan bersedekah jika mampu.`;
+            document.getElementById('buttons-below-nisab-maal').style.display = 'block';
+        }
+    }
 }
 
 function resetForm() {
-    document.getElementById('zakat-maal').reset();
-    document.getElementById('zakat-profesi').reset();
-    document.getElementById('result').innerHTML = '';
-    document.getElementById('buttons-below-nisab').style.display = 'none';
-    document.getElementById('buttons-above-nisab').style.display = 'none';
+    document.querySelectorAll('input').forEach(input => input.value = '');
+    document.getElementById('result').innerText = '';
+    resetButtons();
 }
 
-function switchTab(tabName) {
-    const tabs = document.getElementsByClassName('tab-content');
-    for (let i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
-    }
-    document.getElementById(tabName).classList.add('active');
-
-    const tabButtons = document.getElementsByClassName('tab');
-    for (let i = 0; i < tabButtons.length; i++) {
-        tabButtons[i].classList.remove('active');
-    }
-    document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+function resetButtons() {
+    ['buttons-below-nisab', 'buttons-above-nisab', 'buttons-below-nisab-maal', 'buttons-above-nisab-maal'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+    });
 }
-
-document.getElementById('hargaemas-maal').addEventListener('input', () => updateNisab('maal'));
-document.getElementById('hargaemas-profesi').addEventListener('input', () => updateNisab('profesi'));
-document.getElementById('penghasilan-profesi').addEventListener('input', updatePenghasilanBersihProfesi);
-document.getElementById('kebutuhan-profesi').addEventListener('input', updatePenghasilanBersihProfesi);
-
-document.getElementById('a').addEventListener('input', updateHartaSimpananMaal);
-document.getElementById('b').addEventListener('input', updateHartaSimpananMaal);
-document.getElementById('c').addEventListener('input', updateHartaSimpananMaal);
-document.getElementById('d').addEventListener('input', updateHartaSimpananMaal);
-document.getElementById('e').addEventListener('input', updateHartaSimpananMaal);
-document.getElementById('g').addEventListener('input', updateHartaSimpananMaal);
